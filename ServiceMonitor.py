@@ -8,6 +8,48 @@ import subprocess
 
 SERVICE_FILE = "ServiceList.txt"
 
+class Tooltip:
+    # Creates a tooltip that appears near the mouse cursor when hovering over a widget.
+    def __init__(self, widget):
+        self.widget = widget
+        self.tip_window = None
+        self.text = ""
+        self.widget.bind("<Enter>", self.on_enter)
+        self.widget.bind("<Leave>", self.hide_tip)
+        self.widget.bind("<Motion>", self.on_motion)
+
+    def on_enter(self, event):
+        # Trigger when mouse enters widget.
+        self.show_tip(self.text, event)
+
+    def on_motion(self, event):
+        # Move tooltip to follow mouse cursor.
+        if self.tip_window:
+            x, y = event.x_root + 10, event.y_root + 10
+            self.tip_window.wm_geometry(f"+{x}+{y}")
+
+    def show_tip(self, text, event):
+        # Show tooltip near the mouse cursor.
+        self.text = text
+        if self.tip_window or not text:
+            return
+        
+        x, y = event.x_root + 10, event.y_root + 10
+
+        self.tip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+
+        label = tk.Label(tw, text=text, background="lightyellow", relief="solid", borderwidth=1, font=("Arial", 10))
+        label.pack()
+
+    def hide_tip(self, event=None):
+        # Hide tooltip when mouse leaves.
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
+
+
 class ServiceMonitorApp:
     def __init__(self, root):
         self.root = root
@@ -61,12 +103,14 @@ class ServiceMonitorApp:
         self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
 
     def get_service_mapping(self):
+        # Get a mapping of service display names to actual service names.
         service_map = {}
         for service in psutil.win_service_iter():
             service_map[service.display_name()] = service.name()
         return service_map
 
     def load_services(self):
+        # Load services from the ServiceList file.
         try:
             with open(SERVICE_FILE, "r") as file:
                 service_list = [line.strip() for line in file if line.strip()]
@@ -76,6 +120,7 @@ class ServiceMonitorApp:
             return {}
 
     def get_max_button_width(self):
+        # Get the maximum button width based on service names.
         if not self.services:
             return 20
 
@@ -85,6 +130,7 @@ class ServiceMonitorApp:
         return max(20, max_width // 8)
 
     def create_ui(self):
+        # Create the UI for service buttons and status indicators.
         for widget in self.button_frame.winfo_children():
             widget.destroy()
 
@@ -107,7 +153,11 @@ class ServiceMonitorApp:
 
             self.service_widgets[actual_name] = (canvas, indicator)
 
+            # Add tooltips to the service buttons
+            self.update_tooltip(btn, actual_name)
+
     def get_service_status(self, service_name):
+        # Get the status of a service.
         try:
             service = psutil.win_service_get(service_name)
             return service.status() == "running"
@@ -115,11 +165,18 @@ class ServiceMonitorApp:
             return None
 
     def update_service_status(self):
+        # Update the status of all services and refresh the UI.
+        new_service_map = self.get_service_mapping()
         new_services = self.load_services()
 
-        # Only rebuild the UI if services have changed
+        # Check if the service list has changed
         if new_services != self.services:
+            self.service_map = new_service_map
             self.services = new_services
+
+            # Rebuild the UI only if there's a change
+            for widget in self.button_frame.winfo_children():
+                widget.destroy()
             self.create_ui()
 
         # Update only the status bubbles
@@ -128,9 +185,11 @@ class ServiceMonitorApp:
             color = "lightgreen" if status else "red" if status is not None else "gray"
             canvas.itemconfig(indicator, fill=color)
 
+        # Schedule the next update in 10 seconds
         self.root.after(10000, self.update_service_status)
 
     def toggle_service(self, service_name):
+        # Toggle the service state (start/stop).
         try:
             service = psutil.win_service_get(service_name)
             if service.status() == "running":
@@ -142,6 +201,7 @@ class ServiceMonitorApp:
         self.update_service_status()
 
     def start_all(self):
+        # Start all services.
         for service_name in self.services.values():
             try:
                 win32serviceutil.StartService(service_name)
@@ -150,6 +210,7 @@ class ServiceMonitorApp:
         self.update_service_status()
 
     def stop_all(self):
+        # Stop all services.
         for service_name in self.services.values():
             try:
                 win32serviceutil.StopService(service_name)
@@ -158,17 +219,33 @@ class ServiceMonitorApp:
         self.update_service_status()
 
     def open_service_file(self):
+        # Open the ServiceList file for editing.
         if not os.path.exists(SERVICE_FILE):
             with open(SERVICE_FILE, "w") as f:
                 f.write("")
         subprocess.Popen(["notepad.exe", SERVICE_FILE])
 
     def apply_hover_effect(self, button):
+        # Apply hover effect to the button.
         button.bind("<Enter>", lambda e: button.config(bg="lightblue"))
         button.bind("<Leave>", lambda e: button.config(bg="SystemButtonFace"))
 
     def on_mouse_wheel(self, event):
+        # Handle mouse wheel scrolling.
         self.canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
+
+    def update_tooltip(self, button, service_name):
+        # Update the tooltip text based on the service status.
+        tooltip = Tooltip(button)  # Initialize Tooltip for the button
+
+        if self.get_service_status(service_name):  # If service is running
+            tooltip.text = "Click to STOP"
+        else:
+            tooltip.text = "Click to START"
+
+        # Ensure we call show_tip with event when the mouse hovers over the button
+        button.bind("<Enter>", lambda event, b=button, svc=service_name: tooltip.show_tip(tooltip.text, event))
+
 
 if __name__ == "__main__":
     root = tk.Tk()
