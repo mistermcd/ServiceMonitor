@@ -20,6 +20,7 @@ Windows service monitoring tool
 
 **Individual Service Buttons**
 - Click any individual service to toggle its current status
+- Tooltip will show 'Click to STOP' or 'Click to START'
 
 If you have more services than will fit in a 400x600 window, a vertical scrollbar will be displayed.
 - the vertical scrollbar can be activated with the mousewheel
