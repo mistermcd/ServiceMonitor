@@ -115,17 +115,11 @@ class ServiceMonitorApp:
             return None
 
     def update_service_status(self):
-        new_service_map = self.get_service_mapping()
         new_services = self.load_services()
 
-        # Check if the service list has changed
+        # Only rebuild the UI if services have changed
         if new_services != self.services:
-            self.service_map = new_service_map
             self.services = new_services
-
-            # Rebuild the UI only if there's a change
-            for widget in self.button_frame.winfo_children():
-                widget.destroy()
             self.create_ui()
 
         # Update only the status bubbles
@@ -134,7 +128,6 @@ class ServiceMonitorApp:
             color = "lightgreen" if status else "red" if status is not None else "gray"
             canvas.itemconfig(indicator, fill=color)
 
-        # Schedule the next update in 10 seconds
         self.root.after(10000, self.update_service_status)
 
     def toggle_service(self, service_name):
@@ -144,7 +137,7 @@ class ServiceMonitorApp:
                 win32serviceutil.StopService(service_name)
             else:
                 win32serviceutil.StartService(service_name)
-        except Exception:
+        except Exception as e:
             messagebox.showerror("Error", f"Failed to control service '{service_name}':\n{str(e)}")
         self.update_service_status()
 
@@ -153,7 +146,7 @@ class ServiceMonitorApp:
             try:
                 win32serviceutil.StartService(service_name)
             except Exception:
-                pass # Suppress errors when doing bulk operations
+                pass  # Suppress errors when doing bulk operations
         self.update_service_status()
 
     def stop_all(self):
@@ -161,7 +154,7 @@ class ServiceMonitorApp:
             try:
                 win32serviceutil.StopService(service_name)
             except Exception:
-                pass # Suppress errors when doing bulk operations
+                pass  # Suppress errors when doing bulk operations
         self.update_service_status()
 
     def open_service_file(self):
