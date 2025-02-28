@@ -1,0 +1,26 @@
+
+TeamViewer
+Elasticsearch 8.4.2 (elasticsearchv8)
+Mitel CloudLink Daemon
+Mitel CX Data Processor
+Mitel CX Music on Hold
+Mitel CX Maintenance Alarm Dispatcher
+Mitel CX HPiQ Router
+Mitel CX Sms
+Mitel CX Enterprise
+Mitel CX Auditor
+Mitel CX Data Collection
+Mitel CX Configuration Manager
+Mitel CX Data Synchronization
+Mitel CX MiTAI Proxy
+Mitel CX Reporter
+Mitel CX Inbound Router
+Mitel CX Media Router
+Mitel CX Outbound Router
+Mitel CX UPiQ
+Mitel CX SQL Writer
+Mitel CX Storage
+Mitel CX WFM Connector
+Mitel CX Mass Transit Runtime
+Mitel CX Server Monitor
+Mitel CX Scheduling
