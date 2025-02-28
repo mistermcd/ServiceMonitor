@@ -28,4 +28,5 @@ If you have more services than will fit in a 400x600 window, a vertical scrollba
 Service list changes and service status updates occur on a 10 second cadence.
 
 **Use Windows Service Friendly Names in the ServiceList.txt**
+
 **ServiceList.txt must be in the same folder as ServiceMonitor.exe**
