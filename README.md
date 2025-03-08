@@ -3,7 +3,7 @@ Windows service monitoring tool
 
 **Manage Button** 
 - Clicking this button will open Notepad to the document ServiceList.txt.
-- The ServiceMonitor app will reload the list dynamically so you do not need to restart the app.
+- Reatart the app to load list changes.
 
 **Start All**
 - Cicking this button will start all the services in the list
