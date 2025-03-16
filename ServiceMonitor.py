@@ -96,6 +96,10 @@ class ServiceMonitorApp:
         self.manage_button.pack(side="right", padx=5)
         self.apply_hover_effect(self.manage_button)
 
+        self.help_button = tk.Button(self.header_frame, text="Help", command=self.show_help)
+        self.help_button.pack(side="right", padx=5)
+        self.apply_hover_effect(self.help_button)
+
         self.canvas = tk.Canvas(self.main_frame)
         self.canvas.pack(side="left", fill="both", expand=True)
 
@@ -126,8 +130,9 @@ class ServiceMonitorApp:
 
             btn = tk.Button(frame, text=friendly_name, width=button_width, command=lambda svc=actual_name: self.toggle_service(svc))
             btn.pack(side="left", padx=10)
-            self.apply_hover_effect(btn)
+
             self.update_tooltip(btn, actual_name)
+            self.apply_hover_effect(btn)
 
             self.service_widgets[actual_name] = (canvas, indicator, btn)
 
@@ -219,6 +224,20 @@ class ServiceMonitorApp:
     # Enable the mouse wheel
     def on_mouse_wheel(self, event):
         self.canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
+
+    # Help Dialog
+    def show_help(self):
+        help_msg = """Service State GREEN - running
+Service State RED      - stopped
+Service State GRAY    - unknown
+
+Click a service button to toggle state
+Click STOP ALL to Stop all Services
+Click START ALL to Start all Services
+    
+Click MANAGE to edit the Service List    
+Restart Service Monitor after list edit!"""
+        messagebox.showinfo("Service Manager Help",help_msg)        
 
 if __name__ == "__main__":
     root = tk.Tk()
