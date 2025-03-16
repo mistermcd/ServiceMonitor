@@ -4,7 +4,11 @@ import psutil
 import win32serviceutil
 import tkinter.font as tkFont
 import os
+import gc
 import subprocess
+
+# v11.1.1.1
+# more fixes for memory leak. GC on UI cycles now
 
 SERVICE_FILE = "ServiceList.txt"
 
@@ -41,6 +45,9 @@ class Tooltip:
 
     def hide_tip(self, event=None):
         if self.tip_window:
+            self.tip_window.unbind("<Enter>")
+            self.tip_window.unbind("<Leave>")
+            self.tip_window.unbind("<Motion>")
             self.tip_window.destroy()
             self.tip_window = None
 
@@ -49,7 +56,7 @@ class ServiceMonitorApp:
     def __init__(self, root):
         # Initialize the application window and core variables
         self.root = root
-        self.root.title("McD's Service Monitor")
+        self.root.title("McD's Service Monitor v11.1.1.1")
         self.root.geometry("400x600")
         self.service_map = self.get_service_mapping()
         self.services = self.load_services()
@@ -59,6 +66,7 @@ class ServiceMonitorApp:
         self.create_main_ui()
         self.create_ui()
         self.update_service_status()
+        self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
 
     # Get a mapping of service display names to actual service names
     def get_service_mapping(self):
@@ -110,13 +118,15 @@ class ServiceMonitorApp:
         self.button_frame = tk.Frame(self.canvas)
         self.canvas.create_window((0, 0), window=self.button_frame, anchor="nw")
 
-        self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
-
     # Create the UI elements for services
     def create_ui(self):
         for widget in self.button_frame.winfo_children():
+            widget.unbind("<Enter>")
+            widget.unbind("<Leave>")
+            widget.unbind("<Motion>")
             widget.destroy()
         self.service_widgets.clear()
+        
         test_font = tkFont.nametofont("TkDefaultFont")
         # Pad the button width by 20 pixels
         button_width = max(20, max(test_font.measure(name) for name in self.services.keys()) // 8) + 20
@@ -147,6 +157,9 @@ class ServiceMonitorApp:
             canvas.itemconfig(indicator, fill=color)
             tooltip_text = "Click to STOP" if status else "Click to START"
             btn.tooltip.text = tooltip_text
+
+        gc.collect()
+        
         self.button_frame.update_idletasks()
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.root.after(10000, self.update_service_status)
@@ -200,11 +213,12 @@ class ServiceMonitorApp:
     # Update the tooltip text for a button
     def update_tooltip(self, button, service_name):
         status = self.get_service_status(service_name)
-        tooltip_text = "Click to STOP" if status else "Click to START"
-        if hasattr(button, "tooltip"):
-            button.tooltip.text = tooltip_text
-        else:
-            button.tooltip = Tooltip(button)
+        tooltip_text = "Click to STOP" if status else "Click to START"        
+        if hasattr(button, "tooltip") and button.tooltip:
+            button.tooltip.hide_tip()
+            del button.tooltip
+        button.tooltip = Tooltip(button)
+        button.tooltip.text = tooltip_text       
 
     # Apply hover effects to buttons
     def apply_hover_effect(self, button):
