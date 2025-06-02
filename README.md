@@ -25,7 +25,6 @@ Windows service monitoring tool
 If you have more services than will fit in a 400x600 window, a vertical scrollbar will be displayed.
 - the vertical scrollbar can be activated with the mousewheel
 
-Service list changes and service status updates occur on a 10 second cadence.
 
 **Use Windows Service Friendly Names in the ServiceList.txt**
 
