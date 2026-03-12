@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    McD's Service Monitor v11.1.1.4
+    McD's Service Monitor v12.0.0.2
     A lightweight GUI utility to monitor and manage specific Windows Services defined in a text file.
 
 .DESCRIPTION
@@ -44,7 +44,7 @@ if (-not (Test-Path $ServiceFile)) {
 
 # --- Form Setup ---
 $Form = New-Object System.Windows.Forms.Form
-$Form.Text = "McD's Service Monitor v12.0.0.1"
+$Form.Text = "McD's Service Monitor v12.0.0.2"
 $Form.Size = New-Object System.Drawing.Size(420, 600)
 $Form.StartPosition = "CenterScreen"
 $Form.BackColor = [System.Drawing.Color]::White
@@ -166,10 +166,12 @@ $controls = @(
     $dlg.Size = New-Object System.Drawing.Size(500,600)
     $dlg.StartPosition = "CenterParent"
 
-    $panel = New-Object System.Windows.Forms.Panel
+    $panel = New-Object System.Windows.Forms.FlowLayoutPanel
     $panel.Location = New-Object System.Drawing.Point(12,12)
     $panel.Size = New-Object System.Drawing.Size(460,500)
     $panel.AutoScroll = $true
+    $panel.FlowDirection = "TopDown"
+    $panel.WrapContents = $false
     $dlg.Controls.Add($panel)
 
     $btn = New-Object System.Windows.Forms.Button
@@ -184,32 +186,52 @@ $controls = @(
     # Get all services
     $all = Get-Service | Sort-Object DisplayName
 
-    $checkboxes = @()
-    $y = 10
+$checkboxes = @()
+$y = 0   # start at 0 for clean stacking
 
-    foreach ($svc in $all) {
-        $cb = New-Object System.Windows.Forms.CheckBox
-        $cb.Text = $svc.DisplayName
-        $cb.Tag  = $svc.Name
-        $cb.AutoSize = $true
-        $cb.Location = New-Object System.Drawing.Point(10, $y)
+foreach ($svc in $all) {
 
-        $cb.Add_CheckedChanged({
-            if ($this.Checked) {
-                $this.BackColor = [System.Drawing.Color]::LightGreen
-            } else {
-                $this.BackColor = [System.Drawing.Color]::White
-            }
-        })
+    # Row container panel (fixed height, no padding)
+    $cbPanel = New-Object System.Windows.Forms.Panel
+    $cbPanel.Size = New-Object System.Drawing.Size(440, 20)
+    $cbPanel.Location = New-Object System.Drawing.Point(10, $y)
+    $cbPanel.Margin = '0,0,0,0'
+    $cbPanel.Padding = '0,0,0,0'
+    $cbPanel.BackColor = [System.Drawing.Color]::White
 
-        if ($preSelected -contains $svc.DisplayName) {
-            $cb.Checked = $true
+    # Checkbox
+    $cb = New-Object System.Windows.Forms.CheckBox
+    $cb.Text = $svc.DisplayName
+    $cb.Tag  = $svc.Name
+    $cb.AutoSize = $false
+    $cb.Size = New-Object System.Drawing.Size(420, 20)
+    $cb.Location = New-Object System.Drawing.Point(3, 2)
+
+    # Highlight the panel, not the checkbox
+    $cb.Add_CheckedChanged({
+        if ($this.Checked) {
+            $this.Parent.BackColor = [System.Drawing.Color]::LightGreen
+        } else {
+            $this.Parent.BackColor = [System.Drawing.Color]::White
         }
+    })
 
-        $panel.Controls.Add($cb)
-        $checkboxes += $cb
-        $y += 25
+    # Pre-check
+    if ($preSelected -contains $svc.DisplayName) {
+        $cb.Checked = $true
+        $cbPanel.BackColor = [System.Drawing.Color]::LightGreen
     }
+
+    # Add to UI
+    $cbPanel.Controls.Add($cb)
+    $panel.Controls.Add($cbPanel)
+
+    $checkboxes += $cb
+
+    # Move down exactly one row height
+    $y += 20
+}
+
 
     # Save button logic
     $btn.Add_Click({
