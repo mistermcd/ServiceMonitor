@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    McD's Service Monitor v12.0.0.2
+    McD's Service Monitor v12.0.0.4
     A lightweight GUI utility to monitor and manage specific Windows Services defined in a text file.
 
 .DESCRIPTION
@@ -44,14 +44,15 @@ if (-not (Test-Path $ServiceFile)) {
 
 # --- Form Setup ---
 $Form = New-Object System.Windows.Forms.Form
-$Form.Text = "McD's Service Monitor v12.0.0.2"
+$Form.Text = "McD's Service Monitor v12.0.0.4"
 $Form.Size = New-Object System.Drawing.Size(420, 600)
 $Form.StartPosition = "CenterScreen"
-$Form.BackColor = [System.Drawing.Color]::White
+$Form.BackColor = [System.Drawing.SystemColors]::Window
 
 $HeaderPanel = New-Object System.Windows.Forms.Panel
 $HeaderPanel.Height = 65 
 $HeaderPanel.Dock = "Top"
+$HeaderPanel.BackColor = [System.Drawing.SystemColors]::Control
 
 $FlowPanel = New-Object System.Windows.Forms.FlowLayoutPanel
 $FlowPanel.Dock = "Fill"
@@ -60,6 +61,7 @@ $FlowPanel.FlowDirection = "TopDown"
 $FlowPanel.WrapContents = $false
 
 $ToolTip = New-Object System.Windows.Forms.ToolTip
+$ToolTip.ShowAlways = $true
 
 # --- Logic Functions ---
 
@@ -91,6 +93,7 @@ function Update-UI {
 }
 
 function Reload-ServiceList {
+    $ToolTip.RemoveAll()
     $FlowPanel.Controls.Clear()
     $services = Get-Content $ServiceFile | Where-Object { $_.Trim() -ne "" } | Sort-Object
 
@@ -99,7 +102,7 @@ function Reload-ServiceList {
         $EmptyLabel.Text = "(List is empty. Click Manage to add services)"
         $EmptyLabel.Size = New-Object System.Drawing.Size(380, 30)
         $EmptyLabel.TextAlign = "MiddleCenter"
-        $EmptyLabel.ForeColor = [System.Drawing.Color]::Gray
+        $EmptyLabel.ForeColor = [System.Drawing.SystemColors]::GreyText
         $FlowPanel.Controls.Add($EmptyLabel)
     }
 
@@ -107,6 +110,7 @@ function Reload-ServiceList {
         $RowContainer = New-Object System.Windows.Forms.Panel
         $RowContainer.Size = New-Object System.Drawing.Size(380, 30)
         $RowContainer.Tag = $s
+		$RowContainer.BackColor = [System.Drawing.SystemColors]::Window
 
         $Indicator = New-Object System.Windows.Forms.Label
         $Indicator.Size = New-Object System.Drawing.Size(12, 12)
@@ -120,7 +124,7 @@ function Reload-ServiceList {
         $SvcBtn.Size = New-Object System.Drawing.Size(320, 22)
         $SvcBtn.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
         $SvcBtn.FlatStyle = "Flat"
-        $SvcBtn.Font = New-Object System.Drawing.Font("Segoe UI", 8)
+        $SvcBtn.Font = New-Object System.Drawing.Font("Segoe UI", 9)
         
         $SvcBtn.Add_Click({ Toggle-Service $this.Tag })
         $SvcBtn.Add_MouseEnter({ $this.BackColor = [System.Drawing.Color]::LightBlue })
@@ -146,122 +150,112 @@ function Toggle-Service($ServiceName) {
 }
 
 # --- Build Header Buttons ---
+
 [int]$btnWidth = 75 
 $controls = @(
-    @{ Text = "Help"; Action = { 
-        $msg = "Service status bubble:`n`nGreen: Running`nRed: Stopped`nGray: Missing`n`n" +
-               "- Click service name to toggle status.`n" +
-               "- Click Start or Stop All then confirm.`n" +
-               "- Click Manage to edit service list.`n"
-        [System.Windows.Forms.MessageBox]::Show($msg, "Help") 
-    }},
-@{ Text = "Manage"; Action = {
-
-    # --- Update Service List Dialog ---
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-
-    $dlg = New-Object System.Windows.Forms.Form
-    $dlg.Text = "Selected Services"
-    $dlg.Size = New-Object System.Drawing.Size(500,600)
-    $dlg.StartPosition = "CenterParent"
-
-    $panel = New-Object System.Windows.Forms.FlowLayoutPanel
-    $panel.Location = New-Object System.Drawing.Point(12,12)
-    $panel.Size = New-Object System.Drawing.Size(460,500)
-    $panel.AutoScroll = $true
-    $panel.FlowDirection = "TopDown"
-    $panel.WrapContents = $false
-    $dlg.Controls.Add($panel)
-
-    $btn = New-Object System.Windows.Forms.Button
-    $btn.Text = "Save & Refresh"
-    $btn.Location = New-Object System.Drawing.Point(180,520)
-    $btn.Size = New-Object System.Drawing.Size(140,30)
-    $dlg.Controls.Add($btn)
-
-    # Load existing selections
-    $preSelected = Get-Content $ServiceFile -ErrorAction SilentlyContinue
-
-    # Get all services
-    $all = Get-Service | Sort-Object DisplayName
-
-$checkboxes = @()
-$y = 0   # start at 0 for clean stacking
-
-foreach ($svc in $all) {
-
-    # Row container panel (fixed height, no padding)
-    $cbPanel = New-Object System.Windows.Forms.Panel
-    $cbPanel.Size = New-Object System.Drawing.Size(440, 20)
-    $cbPanel.Location = New-Object System.Drawing.Point(10, $y)
-    $cbPanel.Margin = '0,0,0,0'
-    $cbPanel.Padding = '0,0,0,0'
-    $cbPanel.BackColor = [System.Drawing.Color]::White
-
-    # Checkbox
-    $cb = New-Object System.Windows.Forms.CheckBox
-    $cb.Text = $svc.DisplayName
-    $cb.Tag  = $svc.Name
-    $cb.AutoSize = $false
-    $cb.Size = New-Object System.Drawing.Size(420, 20)
-    $cb.Location = New-Object System.Drawing.Point(3, 2)
-
-    # Highlight the panel, not the checkbox
-    $cb.Add_CheckedChanged({
-        if ($this.Checked) {
-            $this.Parent.BackColor = [System.Drawing.Color]::LightGreen
-        } else {
-            $this.Parent.BackColor = [System.Drawing.Color]::White
+    @{ 
+        Text = "Help"; 
+        Action = { 
+            $msg = "Service status bubble:`n`nGreen: Running`nRed: Stopped`nGray: Missing`n`n" +
+                   "- Click service name to toggle status.`n" +
+                   "- Click Start or Stop All then confirm.`n" +
+                   "- Click Manage to edit service list.`n"
+            [System.Windows.Forms.MessageBox]::Show($msg, "Help") 
         }
-    })
+    },
+    @{ 
+        Text = "Manage"; 
+        Action = {
+            $dlg = New-Object System.Windows.Forms.Form
+            $dlg.Text = "Manage Selected Services List"
+            $dlg.Size = New-Object System.Drawing.Size(500,600)
+            $dlg.StartPosition = "CenterParent"
+			$dlg.BackColor = [System.Drawing.SystemColors]::Window
 
-    # Pre-check
-    if ($preSelected -contains $svc.DisplayName) {
-        $cb.Checked = $true
-        $cbPanel.BackColor = [System.Drawing.Color]::LightGreen
+            $panel = New-Object System.Windows.Forms.FlowLayoutPanel
+            $panel.Location = New-Object System.Drawing.Point(12,12)
+            $panel.Size = New-Object System.Drawing.Size(460,500)
+            $panel.AutoScroll = $true
+            $panel.FlowDirection = "TopDown"
+            $panel.WrapContents = $false
+            $dlg.Controls.Add($panel)
+
+            $btn = New-Object System.Windows.Forms.Button
+            $btn.Text = "Save & Refresh"
+            $btn.Location = New-Object System.Drawing.Point(180,520)
+            $btn.Size = New-Object System.Drawing.Size(140,30)
+            $dlg.Controls.Add($btn)
+
+            $preSelected = Get-Content $ServiceFile -ErrorAction SilentlyContinue
+            $all = Get-Service | Sort-Object DisplayName
+
+            $checkboxes = @()
+            $y = 0
+
+            foreach ($svc in $all) {
+                $cbPanel = New-Object System.Windows.Forms.Panel
+                $cbPanel.Size = New-Object System.Drawing.Size(440, 20)
+                $cbPanel.Location = New-Object System.Drawing.Point(10, $y)
+                $cbPanel.Margin = '0,0,0,0'
+                $cbPanel.Padding = '0,0,0,0'
+                $cbPanel.BackColor = [System.Drawing.SystemColors]::Window
+				$cbPanel.ForeColor = [System.Drawing.SystemColors]::WindowText
+
+                $cb = New-Object System.Windows.Forms.CheckBox
+                $cb.Text = $svc.DisplayName
+                $cb.Tag  = $svc.Name
+                $cb.AutoSize = $false
+                $cb.Size = New-Object System.Drawing.Size(420, 20)
+                $cb.Location = New-Object System.Drawing.Point(3, 2)
+
+                $cb.Add_CheckedChanged({
+                    if ($this.Checked) {
+                        $this.Parent.BackColor = [System.Drawing.Color]::LightGreen
+                    } else {
+                        $this.Parent.BackColor = [System.Drawing.SystemColors]::Window
+                    }
+                })
+
+                if ($preSelected -contains $svc.DisplayName) {
+                    $cb.Checked = $true
+                    $cbPanel.BackColor = [System.Drawing.Color]::LightGreen
+                }
+
+                $cbPanel.Controls.Add($cb)
+                $panel.Controls.Add($cbPanel)
+                $checkboxes += $cb
+                $y += 20
+            }
+
+            $btn.Add_Click({
+                $selected = $checkboxes | Where-Object { $_.Checked } | ForEach-Object { $_.Text }
+                Set-Content -Path $ServiceFile -Value $selected
+                $dlg.Close()
+                Reload-ServiceList
+            })
+
+            $dlg.Add_Shown({ $dlg.Activate() })
+            [void]$dlg.ShowDialog()
+        }
+    },
+    @{ 
+        Text = "Start All"; 
+        Color = "LightGreen"; 
+        Action = { 
+            if(([System.Windows.Forms.MessageBox]::Show("Start all listed services?", "Confirm", 1) -eq 1)) {
+                Get-Content $ServiceFile | ForEach-Object { $s = Get-ServiceObj $_; if($s){ Start-Service $s -EA 0 }}; Update-UI
+            }
+        }
+    },
+    @{ 
+        Text = "Stop All"; 
+        Color = "Tomato"; 
+        Action = { 
+            if(([System.Windows.Forms.MessageBox]::Show("Stop all listed services?", "Confirm", 1) -eq 1)) {
+                Get-Content $ServiceFile | ForEach-Object { $s = Get-ServiceObj $_; if($s){ Stop-Service $s -Force -EA 0 }}; Update-UI
+            }
+        }
     }
-
-    # Add to UI
-    $cbPanel.Controls.Add($cb)
-    $panel.Controls.Add($cbPanel)
-
-    $checkboxes += $cb
-
-    # Move down exactly one row height
-    $y += 20
-}
-
-
-    # Save button logic
-    $btn.Add_Click({
-        $selected = $checkboxes |
-            Where-Object { $_.Checked } |
-            ForEach-Object { $_.Text }
-
-        Set-Content -Path $ServiceFile -Value $selected
-
-        $dlg.Close()
-
-        # Auto-refresh main UI
-        Reload-ServiceList
-    })
-
-    $dlg.Add_Shown({ $dlg.Activate() })
-    [void]$dlg.ShowDialog()
-
-}},
-
-    @{ Text = "Start All"; Color = "LightGreen"; Action = { 
-        if(([System.Windows.Forms.MessageBox]::Show("Start all listed services?", "Confirm", 1) -eq 1)) {
-            Get-Content $ServiceFile | ForEach-Object { $s = Get-ServiceObj $_; if($s){ Start-Service $s -EA 0 }}; Update-UI
-        }
-    }},
-    @{ Text = "Stop All"; Color = "Tomato"; Action = { 
-        if(([System.Windows.Forms.MessageBox]::Show("Stop all listed services?", "Confirm", 1) -eq 1)) {
-            Get-Content $ServiceFile | ForEach-Object { $s = Get-ServiceObj $_; if($s){ Stop-Service $s -Force -EA 0 }}; Update-UI
-        }
-    }}
 )
 
 # CENTER CALCULATION
@@ -275,21 +269,18 @@ foreach ($ctl in $controls) {
     $posX += $btnWidth
     $b.Size = New-Object System.Drawing.Size(($btnWidth - 4), 32)
     
-    # BOLD AND BIGGER FONT
     $b.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
     $b.FlatStyle = "Flat"
     
-    # Store the intended color in the AccessibleDescription to keep it unique to each button
     if ($ctl.Color) { 
         $b.BackColor = [System.Drawing.Color]::($ctl.Color) 
-        $b.AccessibleDescription = $ctl.Color # Remember this color
+        $b.AccessibleDescription = $ctl.Color 
     } else {
-        $b.AccessibleDescription = "Control" # Remember standard color
+        $b.AccessibleDescription = "Control"
     }
     
     $b.Add_Click($ctl.Action)
     
-    # Hover logic (uses the button's own stored AccessibleDescription to reset color)
     $b.Add_MouseEnter({ $this.BackColor = [System.Drawing.Color]::LightBlue })
     $b.Add_MouseLeave({ 
         if ($this.AccessibleDescription -eq "Control") {
