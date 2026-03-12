@@ -11,10 +11,9 @@
 .USAGE
     1. Run the script (it will automatically request Admin privileges).
     2. If ServiceList.txt is missing, the script will create it.
-    3. Click 'Manage' to open the text file and add Service Names or Display Names (one per line).
-    4. Click 'Refresh' to load newly added services without restarting the app.
-    5. Use 'Start All' or 'Stop All' for bulk actions, or click individual service buttons to toggle status.
-    6. Status Indicators: Green (Running), Red (Stopped), Gray (Not Found/Missing).
+    3. Click 'Manage' to open the Service Selection dialog. Click 'Save Refresh' to update the monitored list.
+    4. Use 'Start All' or 'Stop All' for bulk actions, or click individual service buttons to toggle status.
+    5. Status Indicators: Green (Running), Red (Stopped), Gray (Not Found/Missing).
 #>
 
 # --- Hide the Console Window ---
@@ -34,15 +33,15 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     break
 }
 
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-
 $ServiceFile = "$PSScriptRoot\ServiceList.txt"
 if (-not (Test-Path $ServiceFile)) { 
     New-Item -Path $ServiceFile -ItemType File | Out-Null 
 }
 
 # --- Form Setup ---
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "McD's Service Monitor v12.0.0.4"
 $Form.Size = New-Object System.Drawing.Size(420, 600)
