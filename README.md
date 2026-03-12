@@ -1,9 +1,12 @@
 # ServiceMonitor
 Windows service monitoring tool
 
+**Help Button**
+- Really?
+
 **Manage Button** 
-- Clicking this button will open Notepad to the document ServiceList.txt.
-- Restart the app to load list changes.
+- Clicking this button will open service selection dialog.
+- Click Save / Refresh to re-write ServiceList.txt and update monitor list.
 
 **Start All**
 - Cicking this button will start all the services in the list
